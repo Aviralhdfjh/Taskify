@@ -2,6 +2,8 @@ import React, { useState } from 'react'
 import './App.css'
 import InputField from './component/inputfield'
 import TodoList from './component/TodoList'
+import { DragDropContext } from 'react-beautiful-dnd';
+import type { DropResult } from 'react-beautiful-dnd';
 
 interface Todo {
   id: number;
@@ -26,7 +28,7 @@ const App: React.FC = () => {
     }
   };
 
-  const onDragEnd = (result: any) => {
+  const onDragEnd = (result: DropResult) => {
     const { source, destination } = result;
 
     if (!destination) return;
@@ -36,31 +38,37 @@ const App: React.FC = () => {
       source.index === destination.index
     ) return;
 
-    const sourceList = source.droppableId === 'active' ? 'active' : 'completed';
-    const destList = destination.droppableId === 'active' ? 'active' : 'completed';
+   
+    const newTodos = [...todos];
 
-    const sourceItems = todos.filter(todo => 
-      sourceList === 'active' ? !todo.isDone : todo.isDone
-    );
-    const destItems = todos.filter(todo => 
-      destList === 'active' ? !todo.isDone : todo.isDone
+    const sourceIndex = newTodos.findIndex(
+      todo => todo.id.toString() === result.draggableId
     );
 
-    const [movedItem] = sourceItems.splice(source.index, 1);
-    const updatedItem = { ...movedItem, isDone: destList === 'completed' };
+    if (sourceIndex === -1) return;
 
-    if (sourceList === destList) {
-      sourceItems.splice(destination.index, 0, movedItem);
+    const movedItem = newTodos[sourceIndex];
+    if (!movedItem) return;
+    
+    newTodos.splice(sourceIndex, 1);
+
+    const updatedItem: Todo = {
+      id: movedItem.id,
+      todo: movedItem.todo,
+      isDone: destination.droppableId === 'completed'
+    };
+
+    const destinationIndex = newTodos.findIndex(
+      todo => todo.isDone === (destination.droppableId === 'completed')
+    );
+
+    if (destinationIndex === -1) {
+      newTodos.push(updatedItem);
     } else {
-      destItems.splice(destination.index, 0, updatedItem);
+      newTodos.splice(destination.index, 0, updatedItem);
     }
 
-    const newTodos = todos.filter(todo => 
-      (sourceList === 'active' ? !todo.isDone : todo.isDone) &&
-      (destList === 'active' ? !todo.isDone : todo.isDone)
-    );
-
-    setTodos([...newTodos, ...sourceItems, ...destItems]);
+    setTodos(newTodos);
   };
 
   return (
@@ -69,11 +77,12 @@ const App: React.FC = () => {
         <i className="fas fa-clipboard-list"></i> Taskify
       </h1>
       <InputField todo={todo} setTodo={setTodo} handleAdd={handleAdd} />
-      <TodoList 
-        todos={todos} 
-        setTodos={setTodos} 
-        onDragEnd={onDragEnd}
-      />
+      <DragDropContext onDragEnd={onDragEnd}>
+        <TodoList 
+          todos={todos} 
+          setTodos={setTodos}
+        />
+      </DragDropContext>
     </div>
   );
 };

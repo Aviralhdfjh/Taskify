@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import './inputfield.css';
 
 interface Props {
