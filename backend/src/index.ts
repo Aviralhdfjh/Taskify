@@ -32,8 +32,23 @@ if (process.env.NODE_ENV === 'development') {
 app.use(generalLimiter);
 
 // CORS configuration
+const allowedOrigins = [
+  'https://taskify-2z6j.vercel.app',  // Vercel deployment
+  'http://localhost:5173',            // Vite dev server
+  'http://localhost:3000'             // Alternative local development
+];
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
@@ -51,11 +66,7 @@ app.use('/api/todos', todoRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'ok', 
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV
-  });
+  res.status(200).json({ status: 'ok' });
 });
 
 // Error handling
@@ -76,7 +87,7 @@ const connectWithRetry = async () => {
   
     app.listen(config.port, () => {
       console.log(`Server running in ${process.env.NODE_ENV} mode on port ${config.port}`);
-      console.log(`Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:3000'}`);
+      console.log(`Allowed origins: ${allowedOrigins.join(', ')}`);
     });
   } catch (err) {
     console.error('MongoDB connection error:', err);
