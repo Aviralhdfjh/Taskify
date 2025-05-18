@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 import './AuthForm.css';
 
 interface AuthFormProps {
-  mode: 'login' | 'register';
-  onSubmit: (data: { email: string; password: string; name?: string }) => void;
+  mode: "login" | "register";
+  onSubmit: (data: { email: string; password: string; name?: string }) => Promise<void>;
   error: string | null;
   isLoading: boolean;
   onModeSwitch: () => void;
 }
+
 
 const AuthForm: React.FC<AuthFormProps> = ({ mode, onSubmit, error, isLoading, onModeSwitch }) => {
   const [formData, setFormData] = useState({

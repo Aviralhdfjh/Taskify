@@ -1,11 +1,11 @@
 import React, { useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import AuthForm from '../components/auth/AuthForm';
 import { useAuth } from '../context/AuthContext';
 import './Auth.css';
 
 const Register: React.FC = () => {
-  const { register, error, user } = useAuth();
+  const { register, error, isLoading, user } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -21,7 +21,8 @@ const Register: React.FC = () => {
     }
     
     try {
-      await register(data.name, data.email, data.password);
+      await register(data.email, data.password, data.name);
+      navigate('/');
     } catch (err) {
       console.error('Registration error:', err);
     }
@@ -31,10 +32,13 @@ const Register: React.FC = () => {
     <div className="auth-page">
       <div className="auth-container">
         <h1>Create Account</h1>
-        <AuthForm mode="register" onSubmit={handleSubmit} error={error} />
-        <div className="auth-switch">
-          Already have an account? <Link to="/login">Login here</Link>
-        </div>
+        <AuthForm 
+          mode="register" 
+          onSubmit={handleSubmit} 
+          error={error}
+          isLoading={isLoading}
+          onModeSwitch={() => navigate('/login')} 
+        />
       </div>
     </div>
   );

@@ -2,23 +2,32 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import AuthForm from '../components/auth/AuthForm';
 import { useAuth } from '../context/AuthContext';
+import './Auth.css';
 
 const Login: React.FC = () => {
-  const { login, error } = useAuth();
+  const { login, error, isLoading } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (data: { email: string; password: string }) => {
-    await login(data.email, data.password);
-    if (!error) {
+    try {
+      await login(data.email, data.password);
       navigate('/');
+    } catch (err) {
+      console.error('Login error:', err);
     }
   };
 
   return (
-    <div>
-      <AuthForm mode="login" onSubmit={handleSubmit} error={error} />
-      <div className="auth-switch">
-        Don't have an account? <a href="/register">Register here</a>
+    <div className="auth-page">
+      <div className="auth-container">
+        <h1>Welcome Back</h1>
+        <AuthForm 
+          mode="login" 
+          onSubmit={handleSubmit} 
+          error={error}
+          isLoading={isLoading}
+          onModeSwitch={() => navigate('/register')} 
+        />
       </div>
     </div>
   );
