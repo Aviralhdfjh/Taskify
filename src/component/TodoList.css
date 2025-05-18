@@ -1,3 +1,29 @@
+.dashboard-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  padding: 2rem 1rem;
+}
+
+.dashboard-header {
+  max-width: 1200px;
+  margin: 0 auto 2rem;
+  text-align: center;
+}
+
+.heading {
+  color: #fff;
+  margin-bottom: 2rem;
+  font-size: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.heading i {
+  color: #4299e1;
+}
+
 .todos__container {
   display: flex;
   flex-direction: row;
@@ -17,33 +43,44 @@
   border: 1px solid rgba(255, 255, 255, 0.2);
   width: 50%;
   min-height: 400px;
+  transition: all 0.3s ease;
+}
+
+.todo__list:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
 }
 
 .todo__list--header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .todo__list--title {
   font-size: 1.5rem;
-  color: #333;
+  color: #fff;
   margin: 0;
+  font-weight: 600;
 }
 
 .todo__list--clear {
   background: none;
   border: none;
-  color: #666;
+  color: #ff6b6b;
   cursor: pointer;
   font-size: 1.2rem;
   padding: 0.5rem;
-  transition: color 0.3s ease;
+  transition: all 0.3s ease;
+  border-radius: 0.5rem;
 }
 
 .todo__list--clear:hover {
-  color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.1);
+  transform: scale(1.1);
 }
 
 .todo__list--content {
@@ -52,9 +89,9 @@
 }
 
 .todo__list--content.dragging-over {
-  background: rgba(0, 0, 0, 0.05);
+  background: rgba(255, 255, 255, 0.05);
   border-radius: 0.5rem;
-  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1);
+  padding: 1rem;
 }
 
 .todo__single {
@@ -62,17 +99,27 @@
   justify-content: space-between;
   align-items: center;
   padding: 1rem;
-  margin: 0.5rem 0;
-  background: white;
-  border-radius: 0.5rem;
+  margin: 0.75rem 0;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 0.75rem;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   transition: all 0.2s ease;
-  border: 1px solid #eee;
-  position: relative;
-  user-select: none;
+  cursor: grab;
+}
+
+.todo__single:hover {
+  transform: translateX(5px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.todo__single.dragging {
+  background: #fff;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  transform: scale(1.02);
 }
 
 .todo__single.completed {
+  background: rgba(255, 255, 255, 0.8);
   border-left: 4px solid #51cf66;
 }
 
@@ -89,6 +136,26 @@
   word-break: break-word;
 }
 
+.todo__edit {
+  display: flex;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.todo__edit--input {
+  flex: 1;
+  padding: 0.5rem;
+  border: 2px solid #4299e1;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+
+.todo__edit--input:focus {
+  border-color: #2b6cb0;
+}
+
 .todo__single--actions {
   display: flex;
   gap: 0.5rem;
@@ -102,126 +169,42 @@
   padding: 0.5rem;
   border-radius: 0.3rem;
   transition: all 0.3s ease;
+  color: #4a5568;
 }
 
-.todo__single--complete {
-  color: #51cf66;
+.todo__single--actions button:hover {
+  transform: scale(1.1);
 }
 
-.todo__single--complete:hover {
-  background: rgba(81, 207, 102, 0.1);
+.todo__single--actions button:nth-child(1):hover {
+  color: #4299e1;
+  background: rgba(66, 153, 225, 0.1);
 }
 
-.todo__single--edit {
-  color: #339af0;
+.todo__single--actions button:nth-child(2):hover {
+  color: #48bb78;
+  background: rgba(72, 187, 120, 0.1);
 }
 
-.todo__single--edit:hover {
-  background: rgba(51, 154, 240, 0.1);
-}
-
-.todo__single--delete {
-  color: #ff6b6b;
-}
-
-.todo__single--delete:hover {
-  background: rgba(255, 107, 107, 0.1);
-}
-
-.todo__single--drag-handle {
-  cursor: grab;
-  padding: 0.5rem;
-  margin-right: 0.5rem;
-  color: #666;
-  display: flex;
-  align-items: center;
-  font-size: 1.2rem;
-  transition: all 0.2s ease;
-  border-radius: 0.3rem;
-}
-
-.todo__single--drag-handle:hover {
-  color: #333;
-  background: rgba(0, 0, 0, 0.05);
-}
-
-.todo__single.dragging {
-  background: #f8f9fa;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-  transform: scale(1.03) rotate(1deg);
-  cursor: grabbing;
-  z-index: 1000;
-  opacity: 0.9;
-}
-
-.todo__single.dragging .todo__single--drag-handle {
-  cursor: grabbing;
-}
-
-.todo__edit {
-  display: flex;
-  gap: 0.5rem;
-  width: 100%;
-}
-
-.todo__edit--input {
-  flex: 1;
-  padding: 0.5rem;
-  border: 1px solid #ddd;
-  border-radius: 0.3rem;
-  font-size: 1.1rem;
-}
-
-.todo__edit--save,
-.todo__edit--cancel {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 1.1rem;
-  padding: 0.5rem;
-  border-radius: 0.3rem;
-  transition: all 0.3s ease;
-}
-
-.todo__edit--save {
-  color: #51cf66;
-}
-
-.todo__edit--save:hover {
-  background: rgba(81, 207, 102, 0.1);
-}
-
-.todo__edit--cancel {
-  color: #ff6b6b;
-}
-
-.todo__edit--cancel:hover {
-  background: rgba(255, 107, 107, 0.1);
+.todo__single--actions button:nth-child(3):hover {
+  color: #f56565;
+  background: rgba(245, 101, 101, 0.1);
 }
 
 @media (max-width: 768px) {
   .todos__container {
     flex-direction: column;
-    width: 95%;
-    padding: 0.5rem;
-    gap: 1.5rem;
   }
 
   .todo__list {
     width: 100%;
-    min-height: 300px;
   }
 
-  .todo__single {
-    padding: 0.8rem;
+  .heading {
+    font-size: 2rem;
   }
 
-  .todo__single--text {
-    font-size: 1rem;
-  }
-
-  .todo__single--actions button {
-    font-size: 1rem;
-    padding: 0.4rem;
+  .todo__list--title {
+    font-size: 1.25rem;
   }
 } 

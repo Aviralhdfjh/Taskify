@@ -1,35 +1,30 @@
-import React, { useState } from 'react'
-import './App.css'
-import InputField from './component/inputfield'
-import TodoList from './component/TodoList'
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { DragDropContext } from 'react-beautiful-dnd';
 import type { DropResult } from 'react-beautiful-dnd';
+import './App.css';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import TodoList from './component/TodoList';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import LandingPage from './components/LandingPage';
+import { authService } from './services/api';
 
-interface Todo {
-  id: number;
-  todo: string;
-  isDone: boolean;
-}
+const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  return authService.isAuthenticated() ? (
+    <>{children}</>
+  ) : (
+    <Navigate to="/" replace />
+  );
+};
 
-const App: React.FC = () => {
-  const [todo, setTodo] = useState<string>("");
-  const [todos, setTodos] = useState<Todo[]>([]);
+const AppContent: React.FC = () => {
+  const { token } = useAuth();
 
-  const handleAdd = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (todo) {
-      const newTodo: Todo = {
-        id: Date.now(),
-        todo: todo,
-        isDone: false
-      };
-      setTodos([...todos, newTodo]);
-      setTodo("");
-    }
-  };
+  const onDragEnd = async (result: DropResult) => {
+    if (!token) return;
 
-  const onDragEnd = (result: DropResult) => {
-    const { source, destination } = result;
+    const { source, destination, draggableId } = result;
 
     if (!destination) return;
 
@@ -38,52 +33,53 @@ const App: React.FC = () => {
       source.index === destination.index
     ) return;
 
-   
-    const newTodos = [...todos];
+    try {
+      const response = await fetch(`http://localhost:5000/api/todos/${draggableId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          isDone: destination.droppableId === 'completed'
+        })
+      });
 
-    const sourceIndex = newTodos.findIndex(
-      todo => todo.id.toString() === result.draggableId
-    );
-
-    if (sourceIndex === -1) return;
-
-    const movedItem = newTodos[sourceIndex];
-    if (!movedItem) return;
-    
-    newTodos.splice(sourceIndex, 1);
-
-    const updatedItem: Todo = {
-      id: movedItem.id,
-      todo: movedItem.todo,
-      isDone: destination.droppableId === 'completed'
-    };
-
-    const destinationIndex = newTodos.findIndex(
-      todo => todo.isDone === (destination.droppableId === 'completed')
-    );
-
-    if (destinationIndex === -1) {
-      newTodos.push(updatedItem);
-    } else {
-      newTodos.splice(destination.index, 0, updatedItem);
+      if (response.ok) {
+        // Trigger a re-fetch
+        window.dispatchEvent(new CustomEvent('todoAdded'));
+      }
+    } catch (error) {
+      console.error('Error updating todo:', error);
     }
-
-    setTodos(newTodos);
   };
 
   return (
-    <div className="App">
-      <h1 className="heading">
-        <i className="fas fa-clipboard-list"></i> Taskify
-      </h1>
-      <InputField todo={todo} setTodo={setTodo} handleAdd={handleAdd} />
-      <DragDropContext onDragEnd={onDragEnd}>
-        <TodoList 
-          todos={todos} 
-          setTodos={setTodos}
+    <DragDropContext onDragEnd={onDragEnd}>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route
+          path="/dashboard"
+          element={
+            <PrivateRoute>
+              <TodoList />
+            </PrivateRoute>
+          }
         />
-      </DragDropContext>
-    </div>
+      </Routes>
+    </DragDropContext>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <AuthProvider>
+      <Router>
+        <AppContent />
+      </Router>
+    </AuthProvider>
   );
 };
 
