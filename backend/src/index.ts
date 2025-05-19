@@ -1,5 +1,6 @@
 import dotenv from 'dotenv';
 import path from 'path';
+import http from 'http';
 
 // Load environment variables before other imports
 dotenv.config({ path: path.join(__dirname, '../.env') });
@@ -16,13 +17,14 @@ import { generalLimiter } from './middleware/rateLimiter';
 import { devLogger, prodLogger } from './middleware/logger';
 
 const app = express();
+let server: http.Server | null = null;
 
 // Security middleware
 app.use(securityHeaders);
 app.use(addRequestId);
 
 // Request logging
-if (process.env.NODE_ENV === 'development') {
+if (config.nodeEnv === 'development') {
   app.use(devLogger);
 } else {
   app.use(prodLogger);
@@ -33,9 +35,9 @@ app.use(generalLimiter);
 
 // CORS configuration
 const allowedOrigins = [
-  'https://taskify-2z6j.vercel.app',  // Vercel deployment
-  'http://localhost:5173',            // Vite dev server
-  'http://localhost:3000'             // Alternative local development
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'https://taskify-2z6j.vercel.app'
 ];
 
 app.use(cors({
@@ -65,9 +67,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/todos', todoRoutes);
 
 // Health check endpoint
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'ok' });
-});
+app.get('/health', (req, res) => {  const mongoStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';  res.status(200).json({     status: 'ok',    environment: config.nodeEnv,    timestamp: new Date().toISOString(),    mongo: mongoStatus,    uptime: process.uptime(),    memory: process.memoryUsage()  });});
 
 // Error handling
 app.use(errorHandler);
@@ -80,32 +80,154 @@ app.use((req, res) => {
   });
 });
 
-const connectWithRetry = async () => {
-  try {
-    await mongoose.connect(config.mongoUri, config.mongooseOptions);
-    console.log('MongoDB connected successfully');
+const shutdown = async (signal?: string) => {
+  console.log(`\nReceived ${signal || 'shutdown'} signal`);
   
-    app.listen(config.port, () => {
-      console.log(`Server running in ${process.env.NODE_ENV} mode on port ${config.port}`);
-      console.log(`Allowed origins: ${allowedOrigins.join(', ')}`);
+  if (server) {
+    console.log('Shutting down server...');
+    await new Promise<void>((resolve, reject) => {
+      server!.close((err) => {
+        if (err) {
+          console.error('Error closing server:', err);
+          reject(err);
+        } else {
+          resolve();
+        }
+      });
+      
+      // Force close after 10 seconds
+      setTimeout(() => {
+        console.log('Forcing server shutdown after timeout');
+        resolve();
+      }, 10000);
     });
-  } catch (err) {
-    console.error('MongoDB connection error:', err);
-    console.log('Retrying connection in 5 seconds...');
-    setTimeout(connectWithRetry, 5000);
+  }
+
+  if (mongoose.connection.readyState === 1) {
+    console.log('Closing MongoDB connection...');
+    try {
+      await mongoose.connection.close();
+      console.log('MongoDB connection closed successfully');
+    } catch (err) {
+      console.error('Error closing MongoDB connection:', err);
+    }
+  }
+
+  console.log('Shutdown complete');
+  process.exit(0);
+};
+
+const connectToMongoDB = async (retries = 3, delay = 5000): Promise<void> => {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      if (mongoose.connection.readyState === 1) {
+        console.log('MongoDB already connected');
+        return;
+      }
+      
+      console.log(`Connecting to MongoDB (attempt ${attempt}/${retries})...`);
+      await mongoose.connect(config.mongoUri, config.mongooseOptions);
+      console.log('MongoDB connected successfully');
+      return;
+    } catch (err) {
+      console.error(`MongoDB connection attempt ${attempt} failed:`, err);
+      if (attempt === retries) {
+        throw new Error(`Failed to connect to MongoDB after ${retries} attempts`);
+      }
+      console.log(`Retrying in ${delay/1000} seconds...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
   }
 };
 
-// Handle uncaught exceptions
+const startServer = async () => {
+  try {
+    // Connect to MongoDB with retries
+    await connectToMongoDB();
+
+    // Find an available port
+    let port = config.port;
+    try {
+      port = await config.findAvailablePort(config.port);
+      if (port !== config.port) {
+        console.log(`Port ${config.port} is in use, using port ${port} instead`);
+      }
+    } catch (err) {
+      console.error('Failed to find available port:', err);
+      throw err;
+    }
+
+    // Start the server with connection testing
+    return new Promise<void>((resolve, reject) => {
+      server = app.listen(port, () => {
+        console.log(`Server running in ${config.nodeEnv} mode on port ${port}`);
+        console.log(`CORS: ${config.nodeEnv === 'development' ? 'All origins allowed' : `Restricted to ${config.frontendUrl}`}`);
+        
+        // Test the server connection
+        const testConnection = () => {
+          const req = http.request({
+            hostname: 'localhost',
+            port: port,
+            path: '/health',
+            method: 'GET',
+            timeout: 5000
+          }, (res) => {
+            if (res.statusCode === 200) {
+              console.log('Server health check passed');
+              resolve();
+            } else {
+              reject(new Error(`Health check failed with status: ${res.statusCode}`));
+            }
+          });
+
+          req.on('error', (err) => {
+            reject(new Error(`Server health check failed: ${err.message}`));
+          });
+
+          req.end();
+        };
+
+        // Wait a bit before testing to ensure server is ready
+        setTimeout(testConnection, 1000);
+      });
+
+      server.on('error', (error: NodeJS.ErrnoException) => {
+        if (error.code === 'EADDRINUSE') {
+          reject(new Error(`Port ${port} is already in use`));
+        } else {
+          reject(error);
+        }
+      });
+
+      // Set server timeout
+      server.timeout = 30000; // 30 seconds
+      server.keepAliveTimeout = 65000; // slightly higher than 60 seconds
+    });
+
+  } catch (err) {
+    console.error('Startup error:', err);
+    await shutdown();
+    process.exit(1);
+  }
+};
+
+// Handle process signals
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
+
+// Handle uncaught exceptions and unhandled rejections
 process.on('uncaughtException', (error) => {
   console.error('Uncaught Exception:', error);
-  process.exit(1);
+  shutdown('UNCAUGHT_EXCEPTION');
 });
 
-// Handle unhandled promise rejections
 process.on('unhandledRejection', (error) => {
   console.error('Unhandled Rejection:', error);
-  process.exit(1);
+  shutdown('UNHANDLED_REJECTION');
 });
 
-connectWithRetry(); 
+// Start the server
+startServer().catch((err) => {
+  console.error('Failed to start server:', err);
+  process.exit(1);
+}); 

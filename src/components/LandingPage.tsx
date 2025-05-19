@@ -1,121 +1,94 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { 
-  FaTasks,
-  FaMoon, FaSun, FaGithub, FaTwitter, FaLinkedin 
-} from 'react-icons/fa';
-import AuthForm from './auth/AuthForm';
-import { useAuth } from '../context/AuthContext';
+import React from 'react';
+import { Link } from 'react-router-dom';
 import './LandingPage.css';
 
 const LandingPage: React.FC = () => {
-  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    const saved = localStorage.getItem('darkMode');
-    return saved ? JSON.parse(saved) : true;
-  });
-  const { login, register, error: authError, isLoading, user } = useAuth();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (user) navigate('/dashboard');
-  }, [user, navigate]);
-
-  useEffect(() => {
-    localStorage.setItem('darkMode', JSON.stringify(isDarkMode));
-    document.body.classList.toggle('dark-mode', isDarkMode);
-  }, [isDarkMode]);
-
-  const handleAuthSubmit = async (data: { email: string; password: string; name?: string }) => {
-    try {
-      if (authMode === 'login') {
-        await login(data.email, data.password);
-      } else {
-        if (!data.name) throw new Error('Name is required');
-        await register(data.email, data.password, data.name);
-      }
-    } catch (err) {
-      console.error('Auth error:', err);
-    }
-  };
-
   return (
-    <div className={`landing-container ${isDarkMode ? 'dark' : 'light'}`}>
-      <nav className="nav-bar">
-        <div className="nav-logo">
-          <FaTasks className="nav-logo-icon" />
-          <span>Taskify</span>
-        </div>
+    <div className="landing-container">
+      <nav className="landing-nav">
+        <div className="logo">Taskify</div>
         <div className="nav-links">
-          <button 
-            className="theme-toggle"
-            onClick={() => setIsDarkMode(!isDarkMode)}
-            aria-label="Toggle theme"
-          >
-            {isDarkMode ? <FaSun /> : <FaMoon />}
-          </button>
+          <Link to="/login" className="nav-link">Login</Link>
+          <Link to="/register" className="nav-button">Get Started</Link>
         </div>
       </nav>
 
-      <main className="landing-main">
-        <section className="hero-section">
-          <div className="hero-content">
-            <h1 className="hero-title">
-              <span className="gradient-text">Taskify</span>
-              <span className="hero-subtitle">Smart Task Management</span>
-            </h1>
-            <p className="hero-description">
-              Transform your productivity with our intelligent task management platform.
-              Organize, track, and accomplish your goals efficiently.
-            </p>
-            <div className="hero-cta">
-              <button className="cta-button primary" onClick={() => setAuthMode('register')}>
-                Get Started
-              </button>
-              <button className="cta-button secondary" onClick={() => setAuthMode('login')}>
-                Sign In
-              </button>
-            </div>
+      <main className="hero-section">
+        <div className="hero-content">
+          <h1>Organize Your Tasks, Boost Your Productivity</h1>
+          <p className="hero-subtitle">
+            Taskify helps you manage your tasks efficiently, collaborate with your team,
+            and achieve your goals faster.
+          </p>
+          <div className="cta-buttons">
+            <Link to="/register" className="cta-primary">Start Free Trial</Link>
+            <Link to="/login" className="cta-secondary">Sign In</Link>
           </div>
-        </section>
-
-        <section className="auth-section">
-          <div className="auth-container glass-morphism">
-            <AuthForm
-              mode={authMode}
-              onSubmit={handleAuthSubmit}
-              error={authError}
-              isLoading={isLoading}
-              onModeSwitch={() => setAuthMode(authMode === 'login' ? 'register' : 'login')}
-            />
-          </div>
-        </section>
+        </div>
+        <div className="hero-image">
+          <img src="/task-management.svg" alt="Task Management" />
+        </div>
       </main>
 
-      <footer className="footer">
+      <section className="features-section">
+        <h2>Why Choose Taskify?</h2>
+        <div className="features-grid">
+          <div className="feature-card">
+            <div className="feature-icon">📝</div>
+            <h3>Simple Task Management</h3>
+            <p>Create, organize, and track your tasks with an intuitive interface</p>
+          </div>
+          <div className="feature-card">
+            <div className="feature-icon">👥</div>
+            <h3>Team Collaboration</h3>
+            <p>Work together seamlessly with your team members</p>
+          </div>
+          <div className="feature-card">
+            <div className="feature-icon">📊</div>
+            <h3>Progress Tracking</h3>
+            <p>Monitor your progress with visual analytics and reports</p>
+          </div>
+          <div className="feature-card">
+            <div className="feature-icon">🔔</div>
+            <h3>Smart Notifications</h3>
+            <p>Stay updated with real-time notifications and reminders</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="testimonials-section">
+        <h2>What Our Users Say</h2>
+        <div className="testimonials-grid">
+          <div className="testimonial-card">
+            <p>"Taskify has transformed how our team manages projects. It's simple yet powerful."</p>
+            <div className="testimonial-author">- Sarah Johnson, Project Manager</div>
+          </div>
+          <div className="testimonial-card">
+            <p>"The best task management tool I've used. Clean interface and great features."</p>
+            <div className="testimonial-author">- Michael Chen, Developer</div>
+          </div>
+        </div>
+      </section>
+
+      <footer className="landing-footer">
         <div className="footer-content">
           <div className="footer-section">
-            <h4>Connect With Us</h4>
-            <div className="social-links">
-              <a href="https://github.com" target="_blank" rel="noopener noreferrer">
-                <FaGithub />
-              </a>
-              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer">
-                <FaTwitter />
-              </a>
-              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer">
-                <FaLinkedin />
-              </a>
-            </div>
+            <h4>Taskify</h4>
+            <p>Making task management simple and efficient</p>
           </div>
           <div className="footer-section">
             <h4>Quick Links</h4>
-            <a href="/privacy">Privacy</a>
-            <a href="/terms">Terms</a>
+            <Link to="/login">Login</Link>
+            <Link to="/register">Register</Link>
+            <Link to="/about">About</Link>
+          </div>
+          <div className="footer-section">
+            <h4>Contact</h4>
+            <p>support@taskify.com</p>
           </div>
         </div>
         <div className="footer-bottom">
-          <p>© {new Date().getFullYear()} Taskify. All rights reserved.</p>
+          <p>&copy; 2024 Taskify. All rights reserved.</p>
         </div>
       </footer>
     </div>

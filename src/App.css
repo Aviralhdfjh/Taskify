@@ -1,5 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Neucha&family=Poppins:wght@300;400;500;600;700&display=swap');
-
+/* Base styles */
 * {
   margin: 0;
   padding: 0;
@@ -51,6 +50,54 @@ body {
   }
 }
 
+/* Loading and Error States */
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  font-size: 1.2rem;
+  color: var(--text-color);
+  background-color: var(--background-color);
+}
+
+.error-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 2rem;
+  text-align: center;
+  background-color: var(--background-color);
+  color: var(--text-color);
+}
+
+.error-container h1 {
+  color: var(--error-color);
+  margin-bottom: 1rem;
+}
+
+.error-container p {
+  margin-bottom: 2rem;
+  font-size: 1.1rem;
+}
+
+.error-container button {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  border: none;
+  border-radius: 5px;
+  background-color: var(--primary-color);
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.error-container button:hover {
+  background-color: var(--primary-hover);
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
   .App {
@@ -85,5 +132,101 @@ body {
   .heading i {
     font-size: 40px;
   }
+}
+
+/* Loading spinner */
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 5px solid var(--background-color);
+  border-top: 5px solid var(--primary-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.error-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.retry-button,
+.refresh-button {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.retry-button {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.refresh-button {
+  background-color: var(--secondary-color);
+  color: white;
+}
+
+.retry-button:hover,
+.refresh-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.error-list {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0;
+  text-align: left;
+  max-width: 400px;
+}
+
+.error-list li {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+  position: relative;
+}
+
+.error-list li::before {
+  content: "•";
+  color: var(--error-color);
+  position: absolute;
+  left: 0;
+  font-size: 1.2rem;
+}
+
+.server-status {
+  background-color: var(--background-color);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin: 1rem 0;
+  text-align: left;
+  max-width: 600px;
+}
+
+.server-status h2 {
+  color: var(--text-color);
+  margin-bottom: 1rem;
+  font-size: 1.2rem;
+}
+
+.server-status p {
+  margin: 0.5rem 0;
+  color: var(--text-color);
+}
+
+.server-status strong {
+  color: var(--primary-color);
+  margin-right: 0.5rem;
 }
 
